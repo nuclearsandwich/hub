@@ -1,7 +1,9 @@
 hub: git + hub = github
 =======================
 
-***NOTE: For changes in my branch see NUCLEARSANDWICH.md.***
+***NOTE: For changes in my branch see [NUCLEARSANDWICH.md][0].***
+
+[0]: https://github.com/nuclearsandwich/hub/blob/master/NUCLEARSANDWICH.md
 
 `hub` is a command line utility which adds GitHub knowledge to `git`.
 
