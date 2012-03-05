@@ -1,6 +1,8 @@
 hub: git + hub = github
 =======================
 
+***NOTE: For changes in my branch see NUCLEARSANDWICH.md.***
+
 `hub` is a command line utility which adds GitHub knowledge to `git`.
 
 It can be used on its own or as a `git` wrapper.
