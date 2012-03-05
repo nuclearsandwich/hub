@@ -44,7 +44,7 @@ git clone git://github.com/renee-project/renee.git -oupstream
 
 Clone the repo locally and run `rake standalone`. This will build the file `hub`
 as a standalone binary in the project root. Then move the binary to wherever you
-like. I keep mine in ~/bin/hub`.
+like. I keep mine in `~/bin/hub`.
 
 [rerun]: https://github.com/alexch/rerun
 [renee]: https://github.com/renee-project/renee
