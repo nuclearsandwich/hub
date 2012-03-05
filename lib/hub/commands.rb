@@ -204,6 +204,10 @@ module Hub
             project = Context::GithubProject.new(nil, owner || github_user(true, host), name, host || 'github.com')
             ssh ||= args[0] != 'submodule' && project.owner == github_user(false, host) || host
             args[idx] = project.git_url(:private => ssh, :https => https_protocol?)
+
+            # Set the remote name according to nuclearsandwich convention.
+            remote = if ssh then "github" else "upstream" end
+            args << "-o#{remote}" unless args.any? { |a| a =~ /^-(-origin|o)/ }
           end
           break
         end
@@ -243,8 +247,8 @@ module Hub
     # $ hub remote add -p mojombo
     # > git remote add mojombo git@github.com:mojombo/THIS_REPO.git
     #
-    # $ hub remote add origin
-    # > git remote add origin git://github.com/YOUR_LOGIN/THIS_REPO.git
+    # $ hub remote add github
+    # > git remote add github git@github.com:YOUR_LOGIN/THIS_REPO.git
     def remote(args)
       if %w[add set-url].include?(args[1])
         name = args.last
@@ -256,8 +260,9 @@ module Hub
 
       ssh = args.delete('-p')
 
-      if args.words[2] == 'origin' && args.words[3].nil?
-        # Origin special case triggers default user/repo
+      if args.words[2] == 'github' && args.words[3].nil?
+        # github special case triggers default user/repo as well as ssh
+        ssh = true
         user, repo = github_user, repo_name
       elsif args.words[-2] == args.words[1]
         # rtomayko/tilt => rtomayko
@@ -407,7 +412,7 @@ module Hub
 
     # $ hub init -g
     # > git init
-    # > git remote add origin git@github.com:USER/REPO.git
+    # > git remote add github git@github.com:USER/REPO.git
     def init(args)
       if args.delete('-g')
         # can't use default_host because there is no local_repo yet
@@ -415,7 +420,7 @@ module Hub
         host = ENV['GITHUB_HOST']
         project = Context::GithubProject.new(nil, github_user(true, host), File.basename(current_dir), host || 'github.com')
         url = project.git_url(:private => true, :https => https_protocol?)
-        args.after ['remote', 'add', 'origin', url]
+        args.after ['remote', 'add', 'github', url]
       end
     end
 
@@ -424,7 +429,7 @@ module Hub
     # > git remote add -f YOUR_USER git@github.com:YOUR_USER/CURRENT_REPO.git
     def fork(args)
       unless project = local_repo.main_project
-        abort "Error: repository under 'origin' remote is not a GitHub project"
+        abort "Error: repository under 'upstream' remote is not a GitHub project"
       end
       forked_project = project.owned_by(github_user(true, project.host))
       if repo_exists?(forked_project)
@@ -437,7 +442,7 @@ module Hub
         exit
       else
         url = forked_project.git_url(:private => true, :https => https_protocol?)
-        args.replace %W"remote add -f #{forked_project.owner} #{url}"
+        args.replace %W"remote add -f github #{url}"
         args.after 'echo', ['new remote:', forked_project.owner]
       end
     rescue HTTPExceptions
@@ -447,14 +452,14 @@ module Hub
 
     # $ hub create
     # ... create repo on github ...
-    # > git remote add -f origin git@github.com:YOUR_USER/CURRENT_REPO.git
+    # > git remote add -f github git@github.com:YOUR_USER/CURRENT_REPO.git
     def create(args)
       if !is_repo?
         abort "'create' must be run from inside a git repository"
       elsif owner = github_user and github_token
         args.shift
         options = {}
-        options[:private] = true if args.delete('-p')
+        options[:private] = true
         new_repo_name = nil
 
         until args.empty?
@@ -485,8 +490,8 @@ module Hub
 
         url = new_project.git_url(:private => true, :https => https_protocol?)
 
-        if remotes.first != 'origin'
-          args.replace %W"remote add -f origin #{url}"
+        if remotes.first != 'github'
+          args.replace %W"remote add -f github #{url}"
         else
           args.replace %W"remote -v"
         end
@@ -498,8 +503,8 @@ module Hub
       exit 1
     end
 
-    # $ hub push origin,staging cool-feature
-    # > git push origin cool-feature
+    # $ hub push github,staging cool-feature
+    # > git push github cool-feature
     # > git push staging cool-feature
     def push(args)
       return if args[1].nil? || !args[1].index(',')

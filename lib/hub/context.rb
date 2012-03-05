@@ -154,8 +154,8 @@ module Hub
         @remotes ||= begin
           # TODO: is there a plumbing command to get a list of remotes?
           list = git_command('remote').to_s.split("\n")
-          # force "origin" to be first in the list
-          main = list.delete('origin') and list.unshift(main)
+          # force "github" to be first in the list
+          main = list.delete('github') and list.unshift(main)
           list.map { |name| Remote.new self, name }
         end
       end
